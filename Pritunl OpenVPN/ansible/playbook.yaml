@@ -1,0 +1,21 @@
+- hosts: localhost
+  connection: local
+  gather_facts: true    # gather OS info that is made available for tasks/roles
+  become: yes
+  module_defaults:
+    yum:
+      lock_timeout: 30
+
+  roles:
+    - role: common
+
+    # 4 GB swap space
+    - role: swap
+      vars:
+        swap_file_size_mb: '4096'
+
+    # Create mountpoint for EFS
+    - role: efs
+
+    # Pritunl VPN Server
+    - role: vpn-pritunl

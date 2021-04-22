@@ -27,7 +27,7 @@
         "ami_regions": "{{user `destination_regions`}}",
         "ssh_username": "ubuntu",
         "ami_name": "geoserver-{{timestamp}}",
-        "ssh_port": 2481
+        "ssh_port": 22
       }
     ],
     "provisioners": [

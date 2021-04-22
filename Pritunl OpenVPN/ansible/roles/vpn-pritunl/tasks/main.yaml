@@ -1,0 +1,120 @@
+---
+
+# Repositories needed for MongoDB and Pritunl installation
+- name: Add MongoDB repository.
+  yum_repository:
+    name: mongodb
+    description: MongoDB Repository
+    baseurl: https://repo.mongodb.org/yum/amazon/2/mongodb-org/4.2/$basearch/
+    enabled: yes
+    gpgcheck: yes
+    gpgkey: https://www.mongodb.org/static/pgp/server-4.2.asc
+
+- name: Add Pritunl Repository
+  yum_repository:
+    name: pritunl
+    description: Pritunl Repository
+    baseurl: https://repo.pritunl.com/stable/yum/amazonlinux/2/
+    enabled: yes
+    gpgcheck: yes
+
+- name: Import gpg key
+  shell: |
+    gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 7568D9BB55FF9E5287D586017AE645C0CF8E292A
+    gpg --armor --export 7568D9BB55FF9E5287D586017AE645C0CF8E292A > key.tmp; sudo rpm --import key.tmp; rm -f key.tmp
+
+- name: import EPEL repo
+  become: yes
+  shell: yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
+
+# Install packages
+- name: Install packages pritunl and mongodb-org
+  yum:
+    name:
+      - openvpn
+      - pritunl
+      - mongodb-org
+      - amazon-efs-utils
+    state: latest
+
+- name: Create MongoDB directory
+  file:
+    path: /mnt/
+    state: directory
+    mode: '0755'
+
+- name: Change ownership of MongoDB directory
+  file:
+    path: /mnt/mongo
+    recurse: yes
+    owner: mongod
+    group: mongod
+    mode: '755'
+
+# Increase Open File Limit
+- name: Increase nofile hard limit for wildcard
+  pam_limits:
+    domain: '*'
+    limit_type: hard
+    limit_item: nofile
+    value: '64000'
+    use_max: yes
+
+- name: Increase nofile soft limit for wildcard
+  pam_limits:
+    domain: '*'
+    limit_type: soft
+    limit_item: nofile
+    value: '64000'
+    use_max: yes
+
+- name: Increase nofile hard limit for root
+  pam_limits:
+    domain: root
+    limit_type: hard
+    limit_item: nofile
+    value: '64000'
+    use_max: yes
+
+- name: Increase nofile soft limit for root
+  pam_limits:
+    domain: root
+    limit_type: soft
+    limit_item: nofile
+    value: '64000'
+    use_max: yes
+
+# mongodb config files
+- name: Copy pritunl config file.
+  template:
+    src: mongodb.j2
+    dest: /etc/mongod.conf
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+
+# pritunl config file
+- name: Copy pritunl config file.
+  template:
+    src: pritunl.conf.j2
+    dest: /etc/pritunl.conf
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+
+# service
+- name: Ensure MongoDB is not started at boot
+  service:
+    name: mongod
+    enabled: yes
+    state: stopped
+
+- name: Ensure Pritunl is not started at boot
+  service:
+    name: pritunl
+    enabled: yes
+    state: stopped
+
+# clean up
+- name: Purge yum cache.
+  command: yum clean all

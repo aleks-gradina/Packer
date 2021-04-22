@@ -1,0 +1,33 @@
+- name: Install nfs-utils
+  yum:
+    name: nfs-utils
+    state: latest
+
+- name: Install Amazon EFS utils
+  yum:
+    name: amazon-efs-utils
+    state: latest
+
+- name: Create mountpoint
+  file:
+    path: /mnt
+    state: directory
+    mode: '0755'
+
+- name: Clear mongodb lock file from EFS"
+  cron:
+    name: "Clear mongo lock"
+    special_time: reboot
+    job: "rm /mnt/mongo/mongod.lock -y"
+
+- name: Start mongodb 60 seconds after reboot"
+  cron:
+    name: "Start mongodb 60 seconse after reboot"
+    special_time: reboot
+    job: "sleep 60 && systemctl start mongod &"
+
+- name: Start pritunl 90 seconds after reboot"
+  cron:
+    name: "Start pritunl 90 seconds after reboot"
+    special_time: reboot
+    job: "sleep 90 && systemctl restart pritunl &"

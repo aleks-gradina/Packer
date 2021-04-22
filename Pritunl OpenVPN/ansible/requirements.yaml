@@ -1,0 +1,4 @@
+- name: amazon-cloudwatch-agent
+  src: christiangda.amazon_cloudwatch_agent
+- name: swap
+  src: geerlingguy.swap
