@@ -1,0 +1,56 @@
+{
+    "variables": {
+      "region": "",
+      "vpc_id": "",
+      "subnet_id": "",
+      "destination_regions": ""
+    },
+    "builders": [
+      {
+        "type": "amazon-ebs",
+        "access_key": "{{user `AWS_ACCESS_KEY_ID`}}",
+        "secret_key": "{{user `AWS_SECRET_ACCESS_KEY`}}",
+        "region": "REGION",
+        "subnet_id": "SUBNET_ID",
+        "associate_public_ip_address": true,
+        "ssh_interface": "public_ip",
+        "source_ami_filter": {
+          "filters": {
+            "virtualization-type": "hvm",
+            "name": "SOURCE_AMI",
+            "root-device-type": "ebs"
+          },
+          "owners": ["ACCOUNT_ID"],
+          "most_recent": true
+        },
+        "instance_type": "t2.micro",
+        "ami_regions": "{{user `destination_regions`}}",
+        "ssh_username": "ubuntu",
+        "ami_name": "geoserver-{{timestamp}}",
+        "ssh_port": 2481
+      }
+    ],
+    "provisioners": [
+      {
+         "type": "shell",
+         "inline": [
+            "sudo apt-get update -y",
+            "sudo apt-get -y install git binutils",
+            "git clone https://github.com/aws/efs-utils",
+            "cd /home/ubuntu/efs-utils",
+            "./build-deb.sh",
+            "sudo apt-get install -y ./build/amazon-efs-utils*deb -y",
+            "sudo apt-get install openjdk-8-jre -y",
+            "sudo apt-get install tomcat8 -y",
+            "sudo wget http://sourceforge.net/projects/geoserver/files/GeoServer/2.17.0/geoserver-2.17.0-war.zip",
+            "sudo apt-get install unzip -y",
+            "sudo unzip geoserver-2.17.0-war.zip",
+            "sudo mv geoserver.war /var/lib/tomcat8/webapps/",
+            "sudo rm geoserver-2.17.0-war.zip",
+            "cd /var/lib/tomcat8/webapps/",
+            "sleep 20",
+            "sudo systemctl enable tomcat8"
+         ]
+      }
+   ]
+}
